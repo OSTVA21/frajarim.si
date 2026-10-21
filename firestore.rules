@@ -1,0 +1,39 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // JAVNE OCENE: vsak lahko bere in doda novo, nihče ne more spreminjati ali brisati.
+    match /reviews/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['name', 'rating', 'comment', 'createdAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 1
+        && request.resource.data.name.size() <= 30
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.comment is string
+        && request.resource.data.comment.size() <= 1000
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
+
+    // ZASEBNA E-POŠTA: obiskovalci jo lahko samo zapišejo, nihče je ne more prebrati.
+    // Vidite jo samo vi v Firebase konzoli (Firestore Database > reviewerEmails).
+    match /reviewerEmails/{id} {
+      allow read: if false;
+      allow create: if request.resource.data.keys().hasOnly(['email', 'name', 'rating', 'createdAt'])
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 200
+        && request.resource.data.email.matches('.+@.+[.].+')
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 30
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
+  }
+}
